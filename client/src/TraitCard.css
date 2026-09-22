@@ -1,0 +1,103 @@
+/* ==========================================================
+   TraitCard.css
+   Адаптовано з референсного бандла Game-BOYJMNwD.css.
+   Vue-специфічні атрибути-селектори виду [data-v-3c9908af]
+   прибрані (це механізм scoped-стилів Vue SFC — у React він
+   не потрібен, звичайний CSS-модуль/файл виконує ту саму роль
+   ізоляції стилів компонента).
+   ========================================================== */
+
+.item-gamerInfo {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 40px;
+  padding: 20px 0;
+  border-bottom: 1px dashed #373737;
+}
+
+.item-gamerInfo:first-child {
+  border-top: 1px dashed #373737;
+}
+
+.item-gamerInfo:last-child {
+  border: none;
+}
+
+/* Модифікатор для "особливих" характеристик (ширші картки,
+   використовується в оригіналі для спец-здібностей) */
+.item-gamerInfo.special {
+  max-width: 733px;
+  margin: 0 auto;
+}
+
+.item-gamerInfo__title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+  color: #b4b4b4;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.item-gamerInfo.special .item-gamerInfo__title {
+  color: #b4bbb3;
+  min-width: 90px;
+}
+
+.item-gamerInfo__icon {
+  font-size: 14px;
+  line-height: 1;
+}
+
+.item-gamerInfo__description {
+  display: flex;
+  flex: auto;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 15px;
+}
+
+.item-gamerInfo__text {
+  color: #fff;
+  text-align: end;
+  font-weight: 700;
+  word-wrap: anywhere;
+}
+
+/* Заглушка тексту на закритій картці */
+.item-gamerInfo__text--placeholder {
+  color: #6b6b6b;
+  font-weight: 600;
+  font-style: italic;
+}
+
+.item-gamerInfo__lockedFunc {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.item-gamerInfo__open {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 26px;
+  padding: 0;
+  background: none;
+  border: none;
+  color: #b4b4b4;
+  cursor: pointer;
+  transition: color 0.2s, transform 0.15s;
+}
+
+.item-gamerInfo__open:hover {
+  color: #f1cd59; /* акцентний "gold" з референсу (.onlyYellow) */
+  transform: scale(1.08);
+}
+
+.item-gamerInfo__open:active {
+  transform: scale(0.95);
+}
