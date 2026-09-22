@@ -1,21 +1,23 @@
 import { socket } from "./socket";
 import { TRAITS } from "./traits";
 import HostGodMode from "./HostGodMode.tsx";
+import TraitCard from "./TraitCard";
 
 // ==========================================================
 //  GameTable.jsx — ігровий стіл.
 //
-//  Дизайн: естетика розсекреченого досьє — карта гравця виглядає
-//  як пожовклий паперовий бланк зі штампом "СЕКРЕТНО", чужі картки —
-//  як замкнені файли, що розкриваються по одному полю за раз.
-//  Під час голосування картки отримують кнопку "Проти" і лічильник
-//  голосів; вигнаний гравець отримує чорно-білий вигляд і штамп.
+//  Дизайн: gold/silver glassmorphism (design-tokens.css) —
+//  .glass-card / .linear-border / .gold-text / .silver-text.
 //
 //  Дані вже прийшли з сервера відфільтрованими:
-//  - у "своєму" записі всі characteristics видно завжди;
-//  - у чужих записах приховані характеристики мають value: "???".
-//  Підрахунок голосів і будь-яка "логіка" голосування — суто на
-//  клієнті: сервер лише зберігає сирий voting.votes.
+//  - у "своєму" записі всі characteristics видно завжди,
+//    isHidden означає лише "ще не розкрито ІНШИМ гравцям";
+//  - у чужих записах приховані характеристики мають value: "???"
+//    і жодна дія клієнта не може їх розкрити — тому OtherPlayerCard
+//    ніколи не передає handleReveal у TraitCard і завжди рендерить
+//    замок в режимі interactive={false} (суто візуальний).
+//  Підрахунок голосів — суто на клієнті, сервер лише зберігає
+//  сирий voting.votes.
 // ==========================================================
 
 export default function GameTable({ roomCode, gameState }) {
@@ -49,41 +51,41 @@ export default function GameTable({ roomCode, gameState }) {
   };
 
   return (
-    <div className="min-h-screen bg-[#12140f] text-stone-200 px-4 py-8 sm:px-8">
+    <div className="min-h-screen bg-bunker-950 text-white px-4 py-8 sm:px-8">
       {/* ---- Банер активного голосування ---- */}
       {voting.isActive && (
-        <div className="max-w-5xl mx-auto mb-6 rounded-md border-2 border-red-500 bg-red-950/60 text-red-200 font-mono font-bold text-center py-3 px-4 uppercase tracking-wide">
+        <div className="max-w-5xl mx-auto mb-6 glass-card linear-border danger text-center py-3 px-4 uppercase tracking-wide font-bold text-danger-light">
           🚨 Йде голосування! Оберіть, кого вигнати з бункера
         </div>
       )}
 
       {/* ---- Лор гри: катастрофа і умови бункера ---- */}
       {gameState?.environment && (
-        <div className="max-w-5xl mx-auto mb-6 rounded-md border border-amber-700/50 bg-amber-950/30 px-4 py-3 sm:px-5 sm:py-4">
-          <p className="text-xs uppercase tracking-widest text-amber-500 font-mono mb-2">
+        <div className="max-w-5xl mx-auto mb-6 glass-card linear-border silver px-4 py-3 sm:px-5 sm:py-4">
+          <p className="text-xs uppercase tracking-widest silver-text mb-2 font-semibold">
             📻 Зведення новин
           </p>
-          <p className="font-mono text-sm sm:text-base text-amber-100 mb-1">
-            <span className="text-amber-500">☣️ Катастрофа:</span>{" "}
+          <p className="text-sm sm:text-base text-white/90 mb-1">
+            <span className="gold-text font-semibold">☣️ Катастрофа:</span>{" "}
             {gameState.environment.catastrophe}
           </p>
-          <p className="font-mono text-sm sm:text-base text-amber-100">
-            <span className="text-amber-500">🏚️ Бункер:</span>{" "}
+          <p className="text-sm sm:text-base text-white/90">
+            <span className="gold-text font-semibold">🏚️ Бункер:</span>{" "}
             {gameState.environment.condition}
           </p>
         </div>
       )}
 
-      <header className="max-w-5xl mx-auto mb-8 flex items-center justify-between border-b border-stone-700/60 pb-4">
+      <header className="max-w-5xl mx-auto mb-8 flex items-center justify-between border-b border-white/10 pb-4">
         <div>
-          <p className="text-xs uppercase tracking-widest text-stone-500 font-mono">
+          <p className="text-xs uppercase tracking-widest text-white/40">
             Операція «Бункер»
           </p>
-          <h1 className="text-2xl sm:text-3xl font-mono font-bold text-stone-100">
+          <h1 className="text-2xl sm:text-3xl font-bold gold-text">
             Кімната {roomCode}
           </h1>
         </div>
-        <div className="text-right text-xs font-mono text-stone-500">
+        <div className="text-right text-xs text-white/40">
           Учасників: {Object.keys(players).length}
         </div>
       </header>
@@ -98,7 +100,7 @@ export default function GameTable({ roomCode, gameState }) {
       {/* ---- Секція 1: моя картка ---- */}
       {me && (
         <section className="max-w-5xl mx-auto mb-12">
-          <DossierCard
+          <MyCard
             name={me.name}
             isHost={me.isHost}
             isEliminated={me.isEliminated}
@@ -114,7 +116,7 @@ export default function GameTable({ roomCode, gameState }) {
 
       {/* ---- Секція 2: інші гравці ---- */}
       <section className="max-w-5xl mx-auto">
-        <p className="text-xs uppercase tracking-widest text-stone-500 font-mono mb-4">
+        <p className="text-xs uppercase tracking-widest text-white/40 mb-4">
           Інші виживальники
         </p>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -132,7 +134,7 @@ export default function GameTable({ roomCode, gameState }) {
             />
           ))}
           {others.length === 0 && (
-            <p className="text-stone-600 text-sm italic">Ви поки що самі в бункері.</p>
+            <p className="text-white/30 text-sm italic">Ви поки що самі в бункері.</p>
           )}
         </div>
       </section>
@@ -145,8 +147,8 @@ export default function GameTable({ roomCode, gameState }) {
 // ------------------------------------------------------------------
 function EliminatedStamp() {
   return (
-    <div className="absolute inset-0 z-10 flex items-center justify-center bg-black/50">
-      <span className="rotate-[-12deg] border-4 border-red-600 text-red-500 font-mono font-extrabold uppercase tracking-widest px-4 py-2 text-lg sm:text-2xl bg-black/40">
+    <div className="absolute inset-0 z-10 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+      <span className="rotate-[-12deg] border-2 border-danger-light text-danger-light font-extrabold uppercase tracking-widest px-4 py-2 text-lg sm:text-2xl bg-black/50 rounded-sm">
         Вигнаний
       </span>
     </div>
@@ -160,16 +162,16 @@ function VoteControl({ isVotingActive, isEliminated, voteCount, isVotedByMe, onV
   if (!isVotingActive || isEliminated) return null;
 
   return (
-    <div className="flex items-center justify-between gap-2 mt-3 pt-3 border-t border-dashed border-current/20">
-      <span className="text-xs font-mono opacity-70">
-        Голосів проти: <strong>{voteCount}</strong>
+    <div className="flex items-center justify-between gap-2 mt-3 pt-3 border-t border-dashed border-white/15">
+      <span className="text-xs text-white/60">
+        Голосів проти: <strong className="text-white">{voteCount}</strong>
       </span>
       <button
         onClick={onVote}
-        className={`text-xs font-mono font-bold uppercase tracking-wide px-3 py-1.5 rounded-sm transition ${
+        className={`text-xs font-bold uppercase tracking-wide px-3 py-1.5 rounded-sm transition ${
           isVotedByMe
-            ? "bg-red-800 text-red-100"
-            : "bg-red-600 hover:bg-red-500 text-red-50"
+            ? "bg-danger text-white/90"
+            : "bg-danger-gradient hover:brightness-110 text-white"
         }`}
       >
         {isVotedByMe ? "✅ Ваш голос" : "🗳️ Проти"}
@@ -179,10 +181,13 @@ function VoteControl({ isVotingActive, isEliminated, voteCount, isVotedByMe, onV
 }
 
 // ------------------------------------------------------------------
-// Моя картка — "розсекречене досьє": паперовий бланк з ротованим
-// штампом, кожне поле можна розкрити окремою кнопкою.
+// Моя картка — золота рамка, характеристики завжди видимі МЕНІ;
+// isHidden тут означає лише "ще не розкрито іншим", тож кнопка
+// відкриває поле для всіх гравців через handleReveal -> socket.emit.
+// Після вигнання дальше розкриття сенсу не має, тож handleReveal
+// не передається (interactive=true, але кнопка disabled в TraitCard).
 // ------------------------------------------------------------------
-function DossierCard({
+function MyCard({
   name,
   isHost,
   isEliminated,
@@ -195,78 +200,59 @@ function DossierCard({
 }) {
   return (
     <div
-      className={`relative overflow-hidden rounded-sm bg-[#e9e2cd] text-[#26221a] shadow-[0_20px_50px_-15px_rgba(0,0,0,0.6)] border border-[#c9bd9a] transition ${
+      className={`relative overflow-hidden glass-card linear-border gold p-5 sm:p-8 transition ${
         isEliminated ? "grayscale opacity-50" : ""
       }`}
     >
       {isEliminated && <EliminatedStamp />}
 
-      {/* штамп СЕКРЕТНО */}
-      <div className="pointer-events-none select-none absolute -right-10 top-6 rotate-[18deg] border-4 border-[#8a1f1f] text-[#8a1f1f] font-mono font-bold text-lg sm:text-xl px-6 py-1 opacity-70">
-        СЕКРЕТНО
-      </div>
-
-      <div className="p-5 sm:p-8">
-        <div className="flex items-baseline justify-between mb-1 font-mono">
-          <p className="text-xs uppercase tracking-widest text-[#6b5f45]">
-            Особова справа
+      <div className="flex items-baseline justify-between mb-1">
+        <p className="text-xs uppercase tracking-widest text-white/40">
+          Особова справа
+        </p>
+        {isHost && (
+          <p className="text-xs gold-text font-semibold uppercase tracking-widest">
+            👑 Хост
           </p>
-          <p className="text-xs text-[#6b5f45]">№ {name?.length ?? 0}{isHost ? "-H" : ""}</p>
-        </div>
-
-        <h2 className="text-2xl sm:text-3xl font-mono font-bold mb-6 border-b-2 border-dashed border-[#8a7c56] pb-3">
-          {name} {isHost && <span title="Хост">👑</span>}
-        </h2>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-4">
-          {TRAITS.map(({ key, label, icon }) => {
-            const trait = traits?.[key];
-            const isHidden = trait?.isHidden;
-            return (
-              <div key={key} className="flex items-start justify-between gap-3 font-mono">
-                <div>
-                  <p className="text-[11px] uppercase tracking-widest text-[#6b5f45]">
-                    {icon} {label}
-                  </p>
-                  <p className="text-base sm:text-lg leading-tight">
-                    {isHidden ? (
-                      <span className="inline-block bg-[#26221a] text-[#26221a] rounded-sm px-2 select-none">
-                        ██████████
-                      </span>
-                    ) : (
-                      trait?.value
-                    )}
-                  </p>
-                </div>
-
-                {isHidden && !isEliminated && (
-                  <button
-                    onClick={() => onReveal(key)}
-                    className="shrink-0 mt-1 rounded-sm bg-[#8a1f1f] hover:bg-[#a52828] text-[#f3e9d8] text-xs font-mono font-bold uppercase tracking-wide px-3 py-1.5 transition"
-                  >
-                    Відкрити
-                  </button>
-                )}
-              </div>
-            );
-          })}
-        </div>
-
-        <VoteControl
-          isVotingActive={isVotingActive}
-          isEliminated={isEliminated}
-          voteCount={voteCount}
-          isVotedByMe={isVotedByMe}
-          onVote={onVote}
-        />
+        )}
       </div>
+
+      <h2 className="text-2xl sm:text-3xl font-bold gold-text mb-6 border-b border-white/10 pb-3">
+        {name}
+      </h2>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        {TRAITS.map(({ key, label, icon }) => {
+          const trait = traits?.[key];
+          return (
+            <TraitCard
+              key={key}
+              traitKey={key}
+              traitData={{ icon, label, value: trait?.value }}
+              isHidden={!!trait?.isHidden}
+              handleReveal={isEliminated ? undefined : onReveal}
+              interactive
+            />
+          );
+        })}
+      </div>
+
+      <VoteControl
+        isVotingActive={isVotingActive}
+        isEliminated={isEliminated}
+        voteCount={voteCount}
+        isVotedByMe={isVotedByMe}
+        onVote={onVote}
+      />
     </div>
   );
 }
 
 // ------------------------------------------------------------------
-// Картка іншого гравця — "замкнений файл": темна, приховані поля
-// показують іконку замка замість тексту.
+// Картка іншого гравця — срібна рамка. Жодна дія клієнта не може
+// розкрити чужу приховану рису, тому handleReveal НЕ передається,
+// а TraitCard рендерить замок як interactive={false} (просто <span>,
+// без onClick) — блокування суто візуальне.
 // ------------------------------------------------------------------
 function OtherPlayerCard({
   name,
@@ -280,34 +266,28 @@ function OtherPlayerCard({
 }) {
   return (
     <div
-      className={`relative overflow-hidden rounded-lg bg-[#1c1f19] border border-stone-700/60 p-4 flex flex-col gap-3 transition ${
+      className={`relative overflow-hidden glass-card linear-border silver p-4 flex flex-col gap-3 transition ${
         isEliminated ? "grayscale opacity-50" : ""
       }`}
     >
       {isEliminated && <EliminatedStamp />}
 
-      <h3 className="font-mono font-bold text-stone-100 flex items-center gap-2 border-b border-stone-700/60 pb-2">
+      <h3 className="font-bold text-white flex items-center gap-2 border-b border-white/10 pb-2">
         {isHost && <span title="Хост">👑</span>}
         {name}
       </h3>
 
-      <div className="flex flex-col gap-2">
+      <div className="grid grid-cols-1 gap-2">
         {TRAITS.map(({ key, label, icon }) => {
           const trait = traits?.[key];
-          const isHidden = trait?.isHidden;
           return (
-            <div key={key} className="flex items-center justify-between text-sm font-mono">
-              <span className="text-stone-500">
-                {icon} {label}
-              </span>
-              {isHidden ? (
-                <span className="flex items-center gap-1 text-stone-600 italic">
-                  🔒 Секретно
-                </span>
-              ) : (
-                <span className="text-stone-200 text-right">{trait?.value}</span>
-              )}
-            </div>
+            <TraitCard
+              key={key}
+              traitKey={key}
+              traitData={{ icon, label, value: trait?.value }}
+              isHidden={!!trait?.isHidden}
+              interactive={false}
+            />
           );
         })}
       </div>
